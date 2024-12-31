@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
 
 class MenuDetailPage extends StatelessWidget {
-  final String name;
-  final String description;
-  final String image;
-  final double price;
+  final String nama;
+  final String keterangan; // Description
+  final String gambar; // Image URL
+  final double harga;
 
-  const MenuDetailPage({super.key, 
-    required this.name,
-    required this.description,
-    required this.image,
-    required this.price,
+  const MenuDetailPage({
+    super.key,
+    required this.nama,
+    required this.keterangan,
+    required this.gambar,
+    required this.harga,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: Text(nama),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Gambar Menu
-            Image.asset(
-              image,
+            Image.network(
+              gambar, // Use Image.network for URL images
               width: double.infinity,
               height: 250,
               fit: BoxFit.cover,
@@ -33,7 +34,7 @@ class MenuDetailPage extends StatelessWidget {
 
             // Nama Menu
             Text(
-              name,
+              nama,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -42,7 +43,7 @@ class MenuDetailPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                description,
+                keterangan, // Display the description instead of the image URL
                 style: const TextStyle(fontSize: 18),
                 textAlign: TextAlign.center,
               ),
@@ -51,7 +52,7 @@ class MenuDetailPage extends StatelessWidget {
 
             // Harga Menu
             Text(
-              'Harga: Rp ${price.toString()}',
+              'Harga: Rp ${harga.toString()}',
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ],

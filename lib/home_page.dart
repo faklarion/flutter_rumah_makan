@@ -8,6 +8,7 @@ import 'cart_item.dart';
 import 'cart_page.dart';
 import 'edit_profile_page.dart';
 import 'blank_screen.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,15 +33,15 @@ class _HomePageState extends State<HomePage> {
   void _addToCart(Map<String, dynamic> menuItem) {
     setState(() {
       final existingItem = _cart.firstWhere(
-        (item) => item.name == menuItem['name'],
-        orElse: () => CartItem(name: '', image: '', price: 0),
+        (item) => item.nama == menuItem['nama'],
+        orElse: () => CartItem(nama: '', gambar: '', harga: 0),
       );
 
-      if (existingItem.name.isEmpty) {
+      if (existingItem.nama.isEmpty) {
         _cart.add(CartItem(
-          name: menuItem['name'],
-          image: menuItem['image'],
-          price: menuItem['price'].toDouble(),
+          nama: menuItem['nama'],
+          gambar: menuItem['gambar'],
+          harga: double.parse(menuItem['harga']), // Convert String to double
           quantity: 1,
         ));
       } else {
@@ -51,7 +52,7 @@ class _HomePageState extends State<HomePage> {
     // Show a Snackbar message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${menuItem['name']} telah ditambahkan ke keranjang.'),
+        content: Text('${menuItem['nama']} telah ditambahkan ke keranjang.'),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -65,12 +66,21 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadMenuData() async {
-    final String response =
-        await rootBundle.loadString('assets/menu_data.json');
-    final data = await json.decode(response);
-    setState(() {
-      _menuList = data;
-    });
+    final response =
+        await http.get(Uri.parse('https://reportglm.com/api/produk.php'));
+
+    if (response.statusCode == 200) {
+      // Jika server mengembalikan respons OK, parse data
+      final jsonResponse = json.decode(response.body);
+
+      // Access the list of products from the 'data' key
+      setState(() {
+        _menuList = jsonResponse['data']; // Access the list of products
+      });
+    } else {
+      // Jika server tidak mengembalikan respons OK, lempar exception
+      throw Exception('Failed to load menu data');
+    }
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -315,13 +325,14 @@ class _HomePageState extends State<HomePage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                    '${_menuList[index]['name']} telah ditambahkan ke keranjang.'),
+                                    '${_menuList[index]['nama']} telah ditambahkan ke keranjang.'), // Ganti 'name' dengan 'nama'
                                 duration: const Duration(seconds: 2),
                               ),
                             );
                           },
-                          child: Image.asset(
-                            _menuList[index]['image'],
+                          child: Image.network(
+                            _menuList[index]
+                                ['gambar'], // Ganti 'image' dengan 'gambar'
                             width: double.infinity,
                             height: 100,
                             fit: BoxFit.cover,
@@ -332,21 +343,44 @@ class _HomePageState extends State<HomePage> {
                           // Name click shows details page
                           child: GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MenuDetailPage(
-                                    name: _menuList[index]['name'],
-                                    description: _menuList[index]
-                                        ['description'],
-                                    image: _menuList[index]['image'],
-                                    price: _menuList[index]['price'].toDouble(),
+                              try {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      // Check if the data is valid before passing it
+                                      final String nama =
+                                          _menuList[index]['nama'] ?? 'Unknown';
+                                      final String keterangan = _menuList[index]
+                                              ['keterangan'] ??
+                                          'No description';
+                                      final String gambar =
+                                          _menuList[index]['gambar'] ?? '';
+                                      final double harga = double.parse(
+                                          _menuList[index]['harga'] ?? '0');
+
+                                      return MenuDetailPage(
+                                        nama: nama,
+                                        keterangan: keterangan,
+                                        gambar: gambar,
+                                        harga: harga,
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
+                                );
+                              } catch (e) {
+                                // Handle the error, e.g., show a Snackbar or log the error
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: ${e.toString()}'),
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              }
                             },
                             child: Text(
-                              _menuList[index]['name'],
+                              _menuList[index]
+                                  ['nama'], // Ganti 'name' dengan 'nama'
                               style: const TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.bold),
                             ),
@@ -355,7 +389,7 @@ class _HomePageState extends State<HomePage> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
                           child: Text(
-                            'Rp ${_menuList[index]['price']}',
+                            'Rp ${_menuList[index]['harga']}', // Ganti 'price' dengan 'harga'
                             style: const TextStyle(fontSize: 10),
                           ),
                         ),

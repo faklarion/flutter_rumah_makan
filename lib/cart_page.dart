@@ -15,7 +15,7 @@ class CartPage extends StatefulWidget {
 class _CartPageState extends State<CartPage> {
   double _calculateTotal() {
     return widget.cart
-        .fold(0, (sum, item) => sum + (item.price * item.quantity));
+        .fold(0, (sum, item) => sum + (item.harga * item.quantity));
   }
 
   void _removeFromCart(CartItem item) {
@@ -48,14 +48,14 @@ class _CartPageState extends State<CartPage> {
                       return Card(
                         margin: const EdgeInsets.all(8.0),
                         child: ListTile(
-                          leading: Image.asset(
-                            item.image,
+                          leading: Image.network(
+                            item.gambar,
                             width: 50,
                             fit: BoxFit.cover,
                           ),
-                          title: Text(item.name),
+                          title: Text(item.nama),
                           subtitle: Text(
-                            'Harga: Rp ${item.price}',
+                            'Harga: Rp ${item.harga}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
