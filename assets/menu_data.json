@@ -1,0 +1,39 @@
+[
+    {
+      "name": "Nasi Goreng",
+      "description": "Nasi goreng spesial dengan telur dan ayam.",
+      "price": 20000,
+      "image": "assets/images/nasi_goreng.jpg"
+    },
+    {
+      "name": "Mie Ayam",
+      "description": "Mie dengan daging ayam, sayuran, dan sambal.",
+      "price": 15000,
+      "image": "assets/images/mie_ayam.jpg"
+    },
+    {
+      "name": "Sate Ayam",
+      "description": "Sate ayam dengan bumbu kacang yang lezat.",
+      "price": 25000,
+      "image": "assets/images/sate_ayam.jpg"
+    },
+    {
+      "name": "Bakso Sapi",
+      "description": "Bakso dengan daging sapi asli nusantara.",
+      "price": 25000,
+      "image": "assets/images/bakso.jpg"
+    },
+    {
+      "name": "Soto Lamongan",
+      "description": "Soto lamongan dengan resep asli dari Lamongan.",
+      "price": 20000,
+      "image": "assets/images/lamongan.jpg"
+    },
+    {
+      "name": "Soto Banjar",
+      "description": "Soto banjar dengan resep asli dari Kalimantan Selatan.",
+      "price": 20000,
+      "image": "assets/images/banjar.jpg"
+    }
+  ]
+  
