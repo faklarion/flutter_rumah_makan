@@ -7,6 +7,7 @@ import 'menu_detail_page.dart'; // Import halaman detail menu
 import 'cart_item.dart';
 import 'cart_page.dart';
 import 'edit_profile_page.dart';
+import 'riwayat_order.dart';
 import 'blank_screen.dart';
 import 'package:http/http.dart' as http;
 
@@ -195,6 +196,12 @@ class _HomePageState extends State<HomePage> {
                 case 'sms':
                   _launchSms();
                   break;
+                case 'riwayat':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrderHistoryPage()),
+                  );
+                  break;
                 case 'call':
                   _launchCall();
                   break;
@@ -221,6 +228,16 @@ class _HomePageState extends State<HomePage> {
                     Icon(Icons.sms, color: Colors.black54),
                     SizedBox(width: 8),
                     Text('SMS'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'riwayat',
+                child: Row(
+                  children: [
+                    Icon(Icons.update, color: Colors.black54),
+                    SizedBox(width: 8),
+                    Text('Riwayat Order'),
                   ],
                 ),
               ),

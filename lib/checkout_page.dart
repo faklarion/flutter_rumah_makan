@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'cart_item.dart';
 import 'home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cart;
@@ -17,14 +20,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _paymentController = TextEditingController();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
+  final _emailController = TextEditingController();
 
   String? _selectedCity;
   List<Map<String, String>> _cities = [];
   double _shippingCost = 0.0;
+  File? _selectedImage;
 
   @override
   void initState() {
     super.initState();
+    _loadEmailFromPrefs();
     _fetchCities();
   }
 
@@ -33,7 +39,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _paymentController.dispose();
     _nameController.dispose();
     _addressController.dispose();
+    _emailController.dispose();
     super.dispose();
+  }
+
+  // Fungsi untuk memilih gambar
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  Future<void> _loadEmailFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('savedEmail') ?? 'No email saved';
+    setState(() {
+      _emailController.text = savedEmail;
+    });
   }
 
   Future<void> _fetchCities() async {
@@ -113,68 +142,80 @@ class _CheckoutPageState extends State<CheckoutPage> {
         : null; // Check if map is not empty
   }
 
-  void _submitOrder() {
-    final totalAmount = _calculateTotal();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Nota Pembayaran'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Rincian Pembelian:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                ...widget.cart.map((item) => ListTile(
-                      title: Text('${item.nama} x${item.quantity}'),
-                      subtitle: Text('Harga: Rp ${item.harga * item.quantity}'),
-                    )),
-                const Divider(),
-                Text(
-                  'Total: Rp ${(totalAmount + _shippingCost).toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Nama: ${_nameController.text}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Alamat: ${_addressController.text}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Kota: ${getCityName(_selectedCity) ?? "-"}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                Text(
-                  'Biaya Ongkir: Rp ${_shippingCost.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ],
-            ),
-          ),
+  Future<void> _submitOrder(File? image) async {
+    if (image == null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Bukti pembayaran belum dipilih!'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => HomePage()),
-                  (route) => false,
-                );
-              },
-              child: const Text('Selesai'),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
             ),
           ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://reportglm.com/api/orders.php'),
+      );
+
+      request.fields['nama'] = _nameController.text;
+      request.fields['email'] = _emailController.text;
+      request.fields['alamat'] = _addressController.text;
+      request.fields['kota'] = _selectedCity ?? '';
+      request.fields['total'] = (_calculateTotal() + _shippingCost).toString();
+
+      request.files.add(
+        await http.MultipartFile.fromPath('bukti_pembayaran', image.path),
+      );
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Berhasil'),
+            content: const Text('Pesanan berhasil disimpan!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => HomePage()),
+                  );
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
-      },
-    );
+      } else {
+        throw Exception('Failed to save order');
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Terjadi kesalahan: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _cancelOrder() {
@@ -217,6 +258,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             ),
             const SizedBox(height: 20),
             TextField(
+              controller: _emailController,
+              readOnly: true,
+              decoration: const InputDecoration(labelText: 'Email'),
+            ),
+            const SizedBox(height: 20),
+            TextField(
               controller: _addressController,
               decoration: const InputDecoration(labelText: 'Alamat Pengiriman'),
             ),
@@ -243,6 +290,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
               },
             )),
             const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _pickImage,
+              child: const Text('Pilih Bukti Pembayaran'),
+            ),
+            if (_selectedImage != null)
+              Image.file(_selectedImage!, height: 100),
             Text(
               'Total: Rp ${(_calculateTotal() + _shippingCost).toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -253,7 +306,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   MainAxisAlignment.spaceEvenly, // Align buttons horizontally
               children: [
                 ElevatedButton(
-                  onPressed: _submitOrder,
+                  onPressed: () {
+                    if (_selectedImage != null) {
+                      _submitOrder(
+                          _selectedImage); // Panggil fungsi dengan parameter
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Error'),
+                          content:
+                              const Text('Bukti pembayaran belum dipilih!'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
                   child: const Text('Cetak Pembayaran'),
                 ),
                 ElevatedButton(
