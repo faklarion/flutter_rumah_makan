@@ -133,15 +133,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         .fold(0, (sum, item) => sum + (item.harga * item.quantity));
   }
 
-  String? getCityName(String? cityId) {
-    final city = _cities.firstWhere((c) => c['city_id'] == cityId,
-        orElse: () => {} // Return an empty map instead of null
-        );
-    return city.isNotEmpty
-        ? city['city_name']
-        : null; // Check if map is not empty
-  }
-
   Future<void> _submitOrder(File? image) async {
     if (image == null) {
       showDialog(
@@ -272,10 +263,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 child: DropdownButtonFormField<String>(
               value: _selectedCity,
               hint: const Text('Pilih Kota'),
-              isExpanded: true, // Ensures the dropdown takes full width
+              isExpanded: true,
               items: _cities.map((city) {
                 return DropdownMenuItem<String>(
-                  value: city['city_id'],
+                  value: city['city_name'], // Gunakan city_name sebagai nilai
                   child: Text(city['city_name'] ?? ''),
                 );
               }).toList(),
@@ -285,7 +276,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   _shippingCost = 0.0;
                 });
                 if (value != null) {
-                  _fetchShippingCost(value);
+                  final selectedCityId = _cities.firstWhere(
+                    (city) => city['city_name'] == value,
+                    orElse: () => {},
+                  )['city_id'];
+                  if (selectedCityId != null) {
+                    _fetchShippingCost(
+                        selectedCityId); // Gunakan city_id untuk API
+                  }
                 }
               },
             )),

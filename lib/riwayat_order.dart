@@ -78,6 +78,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Total: Rp ${order['total']}'),
+                            Text('Tanggal Order: ${order['created_at']}'),
                           ],
                         ),
                         trailing: const Icon(Icons.arrow_forward_ios),

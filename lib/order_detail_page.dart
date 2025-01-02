@@ -25,6 +25,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _printReceipt(Map<String, dynamic> order) async {
     final pdf = pw.Document();
+    final name = await getCityName(widget.order['kota']);
 
     pdf.addPage(
       pw.Page(
@@ -37,6 +38,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
               pw.Text('Order ID: ${order['id_order']}'),
+              pw.Text('Tanggal Order: ${order['created_at']}'),
               pw.Text('Nama: ${order['nama']}'),
               pw.Text('Alamat: ${order['alamat']}'),
               pw.Text('Kota: ${order['kota']}'),
@@ -80,14 +82,19 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Future<void> _fetchCityName() async {
     try {
       final name = await getCityName(widget.order['kota']);
-      setState(() {
-        cityName = name;
-      });
+      if (mounted) {
+        // Check if the widget is still mounted
+        setState(() {
+          cityName = name;
+        });
+      }
     } catch (e) {
-      setState(() {
-        cityName = 'Unknown'; // Jika gagal mendapatkan nama kota
-      });
-      print('Error fetching city name: $e');
+      if (mounted) {
+        // Check if the widget is still mounted
+        setState(() {
+          cityName = 'Error'; // Handle the error appropriately
+        });
+      }
     }
   }
 
@@ -104,11 +111,13 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
+            Text('Tanggal Order: ${widget.order['created_at']}',
+                style: const TextStyle(fontSize: 16)),
             Text('Nama: ${widget.order['nama']}',
                 style: const TextStyle(fontSize: 16)),
             Text('Alamat: ${widget.order['alamat']}',
                 style: const TextStyle(fontSize: 16)),
-            Text('Kota: ${cityName ?? 'Loading...'}',
+            Text('Kota: ${widget.order['kota']}',
                 style: const TextStyle(fontSize: 16)),
             Text('Total: Rp ${widget.order['total']}',
                 style: const TextStyle(fontSize: 16)),
