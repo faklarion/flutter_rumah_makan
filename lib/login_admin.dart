@@ -1,44 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter_shared_preferences/home_page.dart';
-import 'package:flutter_shared_preferences/register_page.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Tambahkan import ini
-import 'login_admin.dart';
+import 'package:flutter_shared_preferences/dashboard_admin.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class AdminLoginPage extends StatefulWidget {
+  const AdminLoginPage({super.key});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _AdminLoginPageState createState() => _AdminLoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _AdminLoginPageState extends State<AdminLoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool isLoggedIn = false;
   bool showPassword = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Cek status login jika diperlukan
-  }
-
-  void _navigateToAdminLoginPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AdminLoginPage()),
-    );
-  }
-
-  Future<void> _login() async {
+  Future<void> _loginAsAdmin() async {
     final email = emailController.text;
     final password = passwordController.text;
 
     final response = await http.post(
       Uri.parse(
-          'https://reportglm.com/api/login.php'), // Ganti dengan URL API Anda
+          'https://reportglm.com/api/admin_login.php'), // Ganti dengan URL API Admin Anda
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -49,16 +33,18 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     if (response.statusCode == 200) {
-      // Jika server mengembalikan respons OK, simpan token atau informasi pengguna
       final data = jsonDecode(response.body);
 
-      // Simpan email ke SharedPreferences
+      // Simpan token admin ke SharedPreferences jika diperlukan
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('savedEmail', email); // Simpan email
+      final token = data['token'] ?? '';
+      if (token.isNotEmpty) {
+        await prefs.setString('adminToken', token);
+      } else {
+        print('Error: Token is missing');
+      }
 
-      // Misalnya, simpan token ke SharedPreferences jika diperlukan
-      // await prefs.setString('token', data['token']);
-      _navigateToHomePage();
+      _navigateToAdminDashboard();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email atau password salah')),
@@ -66,17 +52,10 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _navigateToHomePage() {
+  void _navigateToAdminDashboard() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => HomePage()),
-    );
-  }
-
-  void _navigateToRegisterPage() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const RegisterPage()),
+      MaterialPageRoute(builder: (context) => const AdminDashboard()),
     );
   }
 
@@ -90,8 +69,8 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
-        automaticallyImplyLeading: false,
+        title: const Text('Admin Login'),
+        automaticallyImplyLeading: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -130,27 +109,12 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: _login,
-                    icon: const Icon(Icons.login),
-                    label: const Text('Login'),
+                    onPressed: _loginAsAdmin,
+                    icon: const Icon(Icons.admin_panel_settings),
+                    label: const Text('Login as Admin'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Center(
-                  child: Column(
-                    children: [
-                      TextButton(
-                        onPressed: _navigateToRegisterPage,
-                        child: const Text('Register'),
-                      ),
-                      TextButton(
-                        onPressed: _navigateToAdminLoginPage,
-                        child: const Text('Login as Admin'),
-                      ),
-                    ],
                   ),
                 ),
               ],
