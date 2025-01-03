@@ -25,7 +25,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
 
   Future<void> _printReceipt(Map<String, dynamic> order) async {
     final pdf = pw.Document();
-    final name = await getCityName(widget.order['kota']);
 
     pdf.addPage(
       pw.Page(
