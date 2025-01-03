@@ -85,7 +85,7 @@ class _AdminPageState extends State<DataAdminPage> {
                 if (isEditing) {
                   await _adminService.updateAdmin(
                     Admin(
-                      id: admin!.id,
+                      id: admin.id,
                       email: _emailController.text,
                       password: _passwordController.text,
                     ),

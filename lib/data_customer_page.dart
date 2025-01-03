@@ -85,7 +85,7 @@ class _CustomerPageState extends State<DataCustomerPage> {
                 if (isEditing) {
                   await _customerService.updateCustomer(
                     Customer(
-                      id: customer!.id,
+                      id: customer.id,
                       email: _emailController.text,
                       password: _passwordController.text,
                     ),
