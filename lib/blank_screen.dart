@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
 
     if (response.statusCode == 200) {
       // Jika server mengembalikan respons OK, simpan token atau informasi pengguna
-      final data = jsonDecode(response.body);
+      jsonDecode(response.body);
 
       // Simpan email ke SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
