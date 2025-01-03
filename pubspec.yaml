@@ -42,6 +42,7 @@ dependencies:
   pdf: ^3.8.4
   printing: ^5.0.1  # Ensure you're using a version >=5.0.1
   image: ^4.1.0
+  intl: ^0.20.1
 
 dev_dependencies:
   flutter_test:
