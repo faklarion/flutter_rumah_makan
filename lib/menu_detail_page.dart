@@ -25,7 +25,7 @@ class MenuDetailPage extends StatelessWidget {
           children: [
             // Gambar Menu
             Image.network(
-              gambar, // Use Image.network for URL images
+              'https://reportglm.com/api/$gambar',
               width: double.infinity,
               height: 250,
               fit: BoxFit.cover,

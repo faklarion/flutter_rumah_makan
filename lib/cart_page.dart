@@ -49,7 +49,7 @@ class _CartPageState extends State<CartPage> {
                         margin: const EdgeInsets.all(8.0),
                         child: ListTile(
                           leading: Image.network(
-                            item.gambar,
+                            'https://reportglm.com/api/${item.gambar}',
                             width: 50,
                             fit: BoxFit.cover,
                           ),

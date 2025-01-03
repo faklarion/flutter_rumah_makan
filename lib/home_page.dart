@@ -347,8 +347,7 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                           child: Image.network(
-                            _menuList[index]
-                                ['gambar'], // Ganti 'image' dengan 'gambar'
+                            'https://reportglm.com/api/${_menuList[index]['gambar']}', // Ganti 'image' dengan 'gambar'
                             width: double.infinity,
                             height: 100,
                             fit: BoxFit.cover,

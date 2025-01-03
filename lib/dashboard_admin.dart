@@ -4,6 +4,7 @@ import 'blank_screen.dart'; // Ganti dengan halaman login admin Anda
 import 'data_admin_page.dart'; // Ganti dengan halaman Data Admin Anda
 import 'data_customer_page.dart'; // Ganti dengan halaman Data Customer Anda
 import 'data_order_page.dart'; // Ganti dengan halaman Data Order Anda
+import 'daftar_produk.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -73,6 +74,17 @@ class AdminDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (context) => const DataOrderPage()),
+                );
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.token,
+              label: 'Data Produk',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProductPage()),
                 );
               },
             ),
