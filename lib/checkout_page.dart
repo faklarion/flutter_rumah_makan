@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'cart_item.dart';
 import 'home_page.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<CartItem> cart;
@@ -17,13 +17,14 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  final _paymentController = TextEditingController();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _emailController = TextEditingController();
-
+  final _amountController = TextEditingController();
   String? _selectedCity;
+  String? _selectedCourier;
   List<Map<String, String>> _cities = [];
+  List<String> _couriers = ['jne', 'pos', 'tiki'];
   double _shippingCost = 0.0;
   File? _selectedImage;
 
@@ -36,25 +37,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   void dispose() {
-    _paymentController.dispose();
     _nameController.dispose();
     _addressController.dispose();
     _emailController.dispose();
+    _amountController.dispose();
     super.dispose();
-  }
-
-  // Fungsi untuk memilih gambar
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-      });
-    } else {
-      print('No image selected.');
-    }
   }
 
   Future<void> _loadEmailFromPrefs() async {
@@ -66,8 +53,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _fetchCities() async {
-    const apiKey =
-        '631ae8aa8298df8899e1dd35dec81bbf'; // Ganti dengan API Key Anda
+    const apiKey = '631ae8aa8298df8899e1dd35dec81bbf';
     const url = 'https://api.rajaongkir.com/starter/city?key=$apiKey';
 
     try {
@@ -91,11 +77,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  Future<void> _fetchShippingCost(String cityId) async {
-    const apiKey =
-        '631ae8aa8298df8899e1dd35dec81bbf'; // Ganti dengan API Key Anda
-    const originCityId = '501'; // Ganti dengan city_id asal Anda
-    const courier = 'jne'; // Pilih courier yang diinginkan
+  Future<void> _fetchShippingCost(String cityId, String courier) async {
+    const apiKey = '631ae8aa8298df8899e1dd35dec81bbf';
+    const originCityId = '501';
     final url = 'https://api.rajaongkir.com/starter/cost';
 
     try {
@@ -128,13 +112,34 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  double _calculateTotal() {
+  double _calculateTotalBelanja() {
     return widget.cart
         .fold(0, (sum, item) => sum + (item.harga * item.quantity));
   }
 
-  Future<void> _submitOrder(File? image) async {
-    if (image == null) {
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  String _getCityName(String cityId) {
+    final city = _cities.firstWhere(
+      (city) => city['city_id'] == cityId,
+      orElse: () => {'city_name': ''},
+    );
+    return city['city_name'] ?? '';
+  }
+
+  Future<void> _submitOrder() async {
+    if (_selectedImage == null) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -157,14 +162,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
         Uri.parse('https://reportglm.com/api/orders.php'),
       );
 
+      // Hitung total belanja dan total akhir
+      final totalBelanja = _calculateTotalBelanja();
+      final total = totalBelanja + _shippingCost;
+
       request.fields['nama'] = _nameController.text;
       request.fields['email'] = _emailController.text;
       request.fields['alamat'] = _addressController.text;
-      request.fields['kota'] = _selectedCity ?? '';
-      request.fields['total'] = (_calculateTotal() + _shippingCost).toString();
-
+      request.fields['kota'] = _getCityName(_selectedCity ?? '');
+      request.fields['kurir'] = _selectedCourier ?? '';
+      request.fields['total_belanja'] = totalBelanja.toString();
+      request.fields['ongkir'] = _shippingCost.toString();
+      request.fields['total'] = total.toString(); // Total belanja + ongkir
+      request.fields['jumlah_uang'] = _amountController.text;
       request.files.add(
-        await http.MultipartFile.fromPath('bukti_pembayaran', image.path),
+        await http.MultipartFile.fromPath(
+            'bukti_pembayaran', _selectedImage!.path),
       );
 
       final response = await request.send();
@@ -209,135 +222,122 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  void _cancelOrder() {
-    // Reset the form or navigate back to the previous screen
-    setState(() {
-      _nameController.clear();
-      _addressController.clear();
-      _selectedCity = null;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Order Summary',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: widget.cart.length,
-                itemBuilder: (context, index) {
-                  final item = widget.cart[index];
-                  return ListTile(
-                    title: Text('${item.nama} x${item.quantity}'),
-                    subtitle: Text('Harga: Rp ${item.harga * item.quantity}'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Text(
+                'Order Summary',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10), // Jarak kecil
+              SizedBox(
+                height: 200, // Tinggi ListView dibatasi
+                child: ListView.builder(
+                  itemCount: widget.cart.length,
+                  itemBuilder: (context, index) {
+                    final item = widget.cart[index];
+                    return ListTile(
+                      title: Text('${item.nama} x${item.quantity}'),
+                      subtitle: Text('Harga: Rp ${item.harga * item.quantity}'),
+                    );
+                  },
+                ),
+              ),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nama'),
+              ),
+              TextField(
+                controller: _addressController,
+                decoration: const InputDecoration(labelText: 'Alamat'),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedCity,
+                hint: const Text('Pilih Kota'),
+                isExpanded: true, // Tambahkan properti ini
+                items: _cities.map((city) {
+                  return DropdownMenuItem<String>(
+                    value: city['city_id'], // Gunakan ID kota sebagai value
+                    child: Text(
+                      city['city_name']!,
+                      overflow: TextOverflow
+                          .ellipsis, // Potong teks jika terlalu panjang
+                    ),
                   );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCity = value;
+                  });
                 },
               ),
-            ),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Nama'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _emailController,
-              readOnly: true,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _addressController,
-              decoration: const InputDecoration(labelText: 'Alamat Pengiriman'),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-                child: DropdownButtonFormField<String>(
-              value: _selectedCity,
-              hint: const Text('Pilih Kota'),
-              isExpanded: true,
-              items: _cities.map((city) {
-                return DropdownMenuItem<String>(
-                  value: city['city_name'], // Gunakan city_name sebagai nilai
-                  child: Text(city['city_name'] ?? ''),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCity = value;
-                  _shippingCost = 0.0;
-                });
-                if (value != null) {
-                  final selectedCityId = _cities.firstWhere(
-                    (city) => city['city_name'] == value,
-                    orElse: () => {},
-                  )['city_id'];
-                  if (selectedCityId != null) {
-                    _fetchShippingCost(
-                        selectedCityId); // Gunakan city_id untuk API
+
+              DropdownButtonFormField<String>(
+                value: _selectedCourier,
+                hint: const Text('Pilih Kurir'),
+                items: _couriers.map((courier) {
+                  return DropdownMenuItem<String>(
+                    value: courier,
+                    child: Text(courier.toUpperCase()),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCourier = value;
+                  });
+                  // Panggil _fetchShippingCost jika kota juga sudah dipilih
+                  if (_selectedCourier != null && _selectedCity != null) {
+                    _fetchShippingCost(_selectedCity!, _selectedCourier!);
                   }
-                }
-              },
-            )),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _pickImage,
-              child: const Text('Pilih Bukti Pembayaran'),
-            ),
-            if (_selectedImage != null)
-              Image.file(_selectedImage!, height: 100),
-            Text(
-              'Total: Rp ${(_calculateTotal() + _shippingCost).toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceEvenly, // Align buttons horizontally
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    if (_selectedImage != null) {
-                      _submitOrder(
-                          _selectedImage); // Panggil fungsi dengan parameter
-                    } else {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Error'),
-                          content:
-                              const Text('Bukti pembayaran belum dipilih!'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('OK'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('Cetak Pembayaran'),
-                ),
-                ElevatedButton(
-                  onPressed: _cancelOrder, // Define your cancel action here
-                  child: const Text('Reset'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors
-                        .red, // Optional: Set the color for the cancel button
+                },
+              ),
+
+              TextField(
+                controller: _amountController,
+                decoration: const InputDecoration(labelText: 'Jumlah Uang'),
+                keyboardType: TextInputType.number,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Belanja: Rp ${_calculateTotalBelanja().toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  Text(
+                    'Ongkir: Rp ${_shippingCost.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Total (Belanja + Ongkir): Rp ${(_calculateTotalBelanja() + _shippingCost).toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: _pickImage,
+                child: const Text('Unggah Bukti Pembayaran'),
+              ),
+              _selectedImage == null
+                  ? const Text('Belum ada gambar')
+                  : Image.file(_selectedImage!),
+              ElevatedButton(
+                onPressed: _submitOrder,
+                child: const Text('Submit'),
+              ),
+            ],
+          ),
         ),
       ),
     );

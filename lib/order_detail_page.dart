@@ -41,7 +41,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
               pw.Text('Nama: ${order['nama']}'),
               pw.Text('Alamat: ${order['alamat']}'),
               pw.Text('Kota: ${order['kota']}'),
-              pw.Text('Total: Rp ${order['total']}'),
+              pw.Text('Total Belanja: Rp ${order['total_belanja']}'),
+              pw.Text('Ongkir: Rp ${order['ongkir']}'),
+              pw.Text('Total (Belanja + Ongkir): Rp ${order['total']}'),
               pw.SizedBox(height: 20),
             ],
           );
@@ -101,7 +103,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Order')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +120,11 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 style: const TextStyle(fontSize: 16)),
             Text('Kota: ${widget.order['kota']}',
                 style: const TextStyle(fontSize: 16)),
-            Text('Total: Rp ${widget.order['total']}',
+            Text('Ongkir : Rp ${widget.order['ongkir']}',
+                style: const TextStyle(fontSize: 16)),
+            Text('Total Belanja : Rp ${widget.order['total_belanja']}',
+                style: const TextStyle(fontSize: 16)),
+            Text('Total (Belanja + Ongkir): Rp ${widget.order['total']}',
                 style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 20),
             if (widget.order['bukti_pembayaran'] != null &&
@@ -132,6 +138,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   const SizedBox(height: 10),
                   Image.network(
                     'https://reportglm.com/api/uploads/${widget.order['bukti_pembayaran']}',
+                    fit: BoxFit.contain,
+                    height: MediaQuery.of(context).size.height * 0.5,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) {
                         return child;
@@ -147,8 +155,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                       }
                     },
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons
-                          .error); // Menampilkan error jika gambar gagal dimuat
+                      return const Icon(Icons.error);
                     },
                   ),
                   const SizedBox(height: 20),
