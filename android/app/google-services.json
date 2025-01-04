@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "98131784120",
+    "project_id": "warung-ajib-a2307",
+    "storage_bucket": "warung-ajib-a2307.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98131784120:android:b6b163c0425e1d272b9f4d",
+        "android_client_info": {
+          "package_name": "com.example.flutter_shared_preferences"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "98131784120-rbhvmjvhabu2l8d1egjg7c5mrbas2q51.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.flutter_shared_preferences",
+            "certificate_hash": "b0c78c040c5a2499de76fa79e0e1933c69b1664b"
+          }
+        },
+        {
+          "client_id": "98131784120-o4gi7vf27ft0cddrdjn56i2ul4abontj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPl2o1q-fEbjKhADKqGv8sLIMxJ3xp8tY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "98131784120-o4gi7vf27ft0cddrdjn56i2ul4abontj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

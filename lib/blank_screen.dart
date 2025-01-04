@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_shared_preferences/home_page.dart';
 import 'package:flutter_shared_preferences/register_page.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Tambahkan import ini
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart'; // Tambahkan ini
 import 'login_admin.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,6 +17,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(); // Tambahkan ini
   bool isLoggedIn = false;
   bool showPassword = false;
 
@@ -37,8 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text;
 
     final response = await http.post(
-      Uri.parse(
-          'https://reportglm.com/api/login.php'), // Ganti dengan URL API Anda
+      Uri.parse('https://reportglm.com/api/login.php'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -49,19 +50,42 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     if (response.statusCode == 200) {
-      // Jika server mengembalikan respons OK, simpan token atau informasi pengguna
       jsonDecode(response.body);
 
-      // Simpan email ke SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('savedEmail', email); // Simpan email
+      await prefs.setString('savedEmail', email);
 
-      // Misalnya, simpan token ke SharedPreferences jika diperlukan
-      // await prefs.setString('token', data['token']);
       _navigateToHomePage();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email atau password salah')),
+      );
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser != null) {
+        final email = googleUser.email;
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('savedEmail', email);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login berhasil: $email')),
+        );
+
+        _navigateToHomePage();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login dengan Google dibatalkan.')),
+        );
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $error')),
       );
     }
   }
@@ -135,6 +159,19 @@ class _LoginPageState extends State<LoginPage> {
                     label: const Text('Login'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _loginWithGoogle,
+                    icon: const Icon(Icons.account_circle),
+                    label: const Text('Login with Google'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.red,
                     ),
                   ),
                 ),
