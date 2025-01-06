@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
     applicationId "com.example.flutter_shared_preferences"
-    minSdkVersion 21
+    minSdkVersion 23
     targetSdkVersion 33
     versionCode 1 // Gantikan flutterVersionCode dengan angka seperti ini
     versionName "1.0.0" // Gantikan flutterVersionName dengan string versi
